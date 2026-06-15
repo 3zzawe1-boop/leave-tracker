@@ -124,10 +124,10 @@ return text ? JSON.parse(text) : null;
 }
 function getStatus(start, end) {
 const today = new Date().toISOString().split('T')[0];
-if (end < today) return { label: 'انتهت', cls: 'badge-ended' };
+if (end < today) return { label: 'منتهية', cls: 'badge-ended' };
 if (start <= today && end >= today) return { label: 'جارية الآن', cls: 'badge-active' };
 const diff = Math.ceil((new Date(start) - new Date()) / 86400000);
-if (diff <= 7) return { label: 'قريباً (' + diff + ' أيام)', cls: 'badge-warning' };
+if (diff <= 7) return { label: '(خلال ' + (diff === 1 ? 'يوم' : diff === 2 ? 'يومين' : diff <= 10 ? diff + ' أيام' : diff + ' يومًا') + ')', cls: 'badge-warning' };
 return { label: 'قادمة', cls: 'badge-upcoming' };
 }
 function formatDate(d) {
@@ -195,7 +195,7 @@ return '<tr>' +
 '<td><strong>' + (l.employees ? l.employees.name : '-') + '</strong></td>' +
 '<td>' + formatDate(l.start_date) + '</td>' +
 '<td>' + formatDate(l.end_date) + '</td>' +
-'<td>' + days + ' يوم</td>' +
+'<td>' + (days === 1 ? 'يوم' : days === 2 ? 'يومان' : days <= 10 ? days + ' أيام' : days + ' يومًا') + '</td>' +
 '<td>' + (l.reason || '-') + '</td>' +
 '<td><span class="badge ' + st.cls + '">' + st.label + '</span></td>' +
 '<td style="display:flex; gap:6px; flex-wrap:wrap;">' +
