@@ -7,7 +7,7 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f4f8; color: #2d3748; direction: rtl; }
-.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px 32px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.header { background: linear-gradient(15deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px 32px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 .header h1 { font-size: 28px; font-weight: 700; }
 .header p { opacity: 0.85; margin-top: 4px; }
 .container { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
@@ -95,7 +95,7 @@ tr:hover td { background: #f7fafc; }
 </div>
 <div class="modal-overlay" id="edit-modal">
 <div class="modal">
-<h3>&#x270F;&#xFE0F; تعديل الإجازة</h3>
+<h3>&#x270F;&#xFE0F; الإجازة</h3>
 <div id="msg-edit" class="msg"></div>
 <input type="hidden" id="edit-id">
 <div class="form-grid">
@@ -105,8 +105,8 @@ tr:hover td { background: #f7fafc; }
 <div class="form-group"><label>السبب</label><input type="text" id="edit-reason" placeholder="مثال: إجازة سنوية"></div>
 </div>
 <div class="modal-actions">
-<button class="btn btn-secondary" onclick="closeEditModal()">إلغاء</button>
-<button class="btn btn-primary" onclick="saveEdit()">&#x1F4BE; حفظ التعديلات</button>
+<button class="btn btn-secondary" onclick="closeEditModal()">✕</button>
+<button class="btn btn-primary" onclick="saveEdit()">&#x1F4BE;</button>
 </div>
 </div>
 </div>
@@ -191,8 +191,8 @@ return '<tr>' +
 '<td>' + (l.reason || '-') + '</td>' +
 '<td><span class="badge ' + st.cls + '">' + st.label + '</span></td>' +
 '<td style="display:flex; gap:6px; flex-wrap:wrap;">' +
-'<button class="btn btn-edit" onclick="openEditModal(' + JSON.stringify(l).replace(/"/g, '&quot;') + ')">&#x270F;&#xFE0F; تعديل</button>' +
-'<button class="btn btn-danger" onclick="deleteLeave(' + l.id + ')">&#x1F5D1;&#xFE0F; حذف</button>' +
+'<button class="btn btn-edit" onclick="openEditModal(' + JSON.stringify(l).replace(/"/g, '&quot;') + ')">&#x270F;&#xFE0F;</button>' +
+'<button class="btn btn-danger" onclick="deleteLeave(' + l.id + ')">&#x1F5D1;&#xFE0F;</button>' +
 '</td>' +
 '</tr>';
 }).join('') +
