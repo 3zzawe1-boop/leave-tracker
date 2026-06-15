@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام تتبع الإجازات</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f4f8; color: #2d3748; direction: rtl; }
+.header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 24px 32px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+.header h1 { font-size: 28px; font-weight: 700; }
+.header p { opacity: 0.85; margin-top: 4px; }
+.container { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
+.stat-card .num { font-size: 36px; font-weight: 700; color: #667eea; }
+.stat-card .label { color: #718096; margin-top: 4px; font-size: 14px; }
+.card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+.card h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 13px; font-weight: 600; color: #4a5568; }
+.form-group input, .form-group select { padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; font-family: inherit; transition: border-color 0.2s; direction: rtl; }
+.form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; }
+.btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; font-family: inherit; }
+.btn-primary { background: #667eea; color: white; }
+.btn-primary:hover { background: #5a67d8; }
+.btn-danger { background: #fc8181; color: white; font-size: 12px; padding: 6px 12px; }
+.btn-danger:hover { background: #f56565; }
+table { width: 100%; border-collapse: collapse; }
+th { background: #f7fafc; padding: 12px 16px; text-align: right; font-size: 13px; font-weight: 600; color: #4a5568; border-bottom: 2px solid #e2e8f0; }
+td { padding: 12px 16px; border-bottom: 1px solid #f0f4f8; font-size: 14px; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f7fafc; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-active { background: #c6f6d5; color: #276749; }
+.badge-upcoming { background: #bee3f8; color: #2c5282; }
+.badge-ended { background: #e2e8f0; color: #718096; }
+.badge-warning { background: #fefcbf; color: #744210; }
+.msg { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; display: none; }
+.msg-success { background: #c6f6d5; color: #276749; }
+.msg-error { background: #fed7d7; color: #9b2c2c; }
+.today-section { background: linear-gradient(135deg, #e6fffa 0%, #ebf8ff 100%); border: 1px solid #81e6d9; }
+.loading { text-align: center; color: #718096; padding: 24px; }
+.empty { text-align: center; color: #a0aec0; padding: 24px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>نظام تتبع الإجازات</h1>
+  <p>إدارة وتتبع إجازات فريق المنصات</p>
+</div>
+<div class="container">
+  <div class="stats">
+    <div class="stat-card"><div class="num" id="stat-total">-</div><div class="label">إجمالي الإجازات</div></div>
+    <div class="stat-card"><div class="num" id="stat-active" style="color:#38a169">-</div><div class="label">في إجازة الآن</div></div>
+    <div class="stat-card"><div class="num" id="stat-upcoming" style="color:#3182ce">-</div><div class="label">إجازات قادمة</div></div>
+    <div class="stat-card"><div class="num" id="stat-employees" style="color:#805ad5">-</div><div class="label">عدد الموظفين</div></div>
+  </div>
+  <div class="card today-section">
+    <h2>الحالة اليوم</h2>
+    <div id="today-info" class="loading">جاري التحميل...</div>
+  </div>
+  <div class="card">
+    <h2>إضافة إجازة جديدة</h2>
+    <div id="msg-add" class="msg"></div>
+    <div class="form-grid">
+      <div class="form-group"><label>الموظف</label><select id="f-employee"><option value="">اختر موظفاً...</option></select></div>
+      <div class="form-group"><label>تاريخ البداية</label><input type="date" id="f-start"></div>
+      <div class="form-group"><label>تاريخ النهاية</label><input type="date" id="f-end"></div>
+      <div class="form-group"><label>السبب</label><input type="text" id="f-reason" placeholder="مثال: إجازة سنوية"></div>
+    </div>
+    <div style="margin-top:16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="addLeave()">إضافة الإجازة</button>
+      <span style="color:#718096; font-size:13px;">أو أضف موظف جديد:</span>
+      <input type="text" id="f-new-emp" placeholder="اسم الموظف الجديد..." style="padding:10px 12px; border:2px solid #e2e8f0; border-radius:8px; font-size:14px; direction:rtl; flex:1; min-width:180px; font-family:inherit;">
+      <button class="btn btn-primary" onclick="addEmployee()">إضافة موظف</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>جميع الإجازات</h2>
+    <div id="msg-del" class="msg"></div>
+    <div id="leaves-table" class="loading">جاري التحميل...</div>
+  </div>
+</div>
+<script>
+const SUPABASE_URL = 'https://wtbypuieilnicomwnwax.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_T88-VXy8YDYL91hk9IgWGg_l0B6Ax4w';
+async function api(path, method, body) {
+  method = method || 'GET';
+  const opts = { method, headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, opts);
+  if (!res.ok) { const err = await res.text(); throw new Error(err); }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+function getStatus(start, end) {
+  const today = new Date().toISOString().split('T')[0];
+  if (end < today) return { label: 'انتهت', cls: 'badge-ended' };
+  if (start <= today && end >= today) return { label: 'جارية الآن', cls: 'badge-active' };
+  const diff = Math.ceil((new Date(start) - new Date()) / 86400000);
+  if (diff <= 7) return { label: 'قريباً (' + diff + ' أيام)', cls: 'badge-warning' };
+  return { label: 'قادمة', cls: 'badge-upcoming' };
+}
+function formatDate(d) {
+  if (!d) return '';
+  const p = d.split('-');
+  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  return p[2] + ' ' + months[parseInt(p[1])-1] + ' ' + p[0];
+}
+function diffDays(s, e) { return Math.ceil((new Date(e) - new Date(s)) / 86400000) + 1; }
+async function loadEmployees() {
+  const emps = await api('employees?select=*&order=name');
+  const sel = document.getElementById('f-employee');
+  sel.innerHTML = '<option value="">اختر موظفاً...</option>';
+  emps.forEach(function(e) { const opt = document.createElement('option'); opt.value = e.id; opt.textContent = e.name; sel.appendChild(opt); });
+  document.getElementById('stat-employees').textContent = emps.length;
+  return emps;
+}
+async function loadLeaves() {
+  const leaves = await api('leaves?select=*,employees(name)&order=start_date.desc');
+  const today = new Date().toISOString().split('T')[0];
+  let active = 0, upcoming = 0;
+  let html = '';
+  if (!leaves || leaves.length === 0) {
+    html = '<div class="empty">لا توجد إجازات مسجلة بعد</div>';
+  } else {
+    html = '<div style="overflow-x:auto"><table><thead><tr><th>الموظف</th><th>من</th><th>إلى</th><th>المدة</th><th>السبب</th><th>الحالة</th><th>حذف</th></tr></thead><tbody>';
+    leaves.forEach(function(l) {
+      const st = getStatus(l.start_date, l.end_date);
+      if (st.cls === 'badge-active') active++;
+      if (st.cls === 'badge-upcoming' || st.cls === 'badge-warning') upcoming++;
+      html += '<tr><td><strong>' + (l.employees ? l.employees.name : '-') + '</strong></td>';
+      html += '<td>' + formatDate(l.start_date) + '</td><td>' + formatDate(l.end_date) + '</td>';
+      html += '<td>' + diffDays(l.start_date, l.end_date) + ' يوم</td>';
+      html += '<td>' + (l.reason || '-') + '</td>';
+      html += '<td><span class="badge ' + st.cls + '">' + st.label + '</span></td>';
+      html += '<td><button class="btn btn-danger" onclick="deleteLeave(' + l.id + ')">حذف</button></td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+  document.getElementById('leaves-table').innerHTML = html;
+  document.getElementById('stat-total').textContent = leaves ? leaves.length : 0;
+  document.getElementById('stat-active').textContent = active;
+  document.getElementById('stat-upcoming').textContent = upcoming;
+  const todayLeaves = (leaves || []).filter(function(l) { return l.start_date <= today && l.end_date >= today; });
+  const upcomingWeek = (leaves || []).filter(function(l) { const diff = Math.ceil((new Date(l.start_date) - new Date()) / 86400000); return diff > 0 && diff <= 7; });
+  let todayHtml = '';
+  if (todayLeaves.length === 0) {
+    todayHtml = '<p style="color:#276749">لا أحد في إجازة اليوم — الفريق كامل ✅</p>';
+  } else {
+    todayHtml = '<p style="margin-bottom:8px; font-weight:600;">في إجازة اليوم:</p>';
+    todayLeaves.forEach(function(l) { todayHtml += '<span class="badge badge-active" style="margin-left:8px; margin-bottom:4px;">' + (l.employees ? l.employees.name : '-') + '</span>'; });
+  }
+  if (upcomingWeek.length > 0) {
+    todayHtml += '<p style="margin-top:12px; margin-bottom:8px; font-weight:600;">إجازات خلال الأسبوع القادم:</p>';
+    upcomingWeek.forEach(function(l) { const diff = Math.ceil((new Date(l.start_date) - new Date()) / 86400000); todayHtml += '<span class="badge badge-warning" style="margin-left:8px;">' + (l.employees ? l.employees.name : '-') + ' (' + diff + ' أيام)</span>'; });
+  }
+  document.getElementById('today-info').innerHTML = todayHtml;
+}
+async function addLeave() {
+  const empId = document.getElementById('f-employee').value;
+  const start = document.getElementById('f-start').value;
+  const end = document.getElementById('f-end').value;
+  const reason = document.getElementById('f-reason').value;
+  const msg = document.getElementById('msg-add');
+  if (!empId || !start || !end) { msg.textContent = 'الرجاء ملء جميع الحقول المطلوبة'; msg.className = 'msg msg-error'; msg.style.display = 'block'; return; }
+  if (end < start) { msg.textContent = 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية'; msg.className = 'msg msg-error'; msg.style.display = 'block'; return; }
+  try {
+    await api('leaves', 'POST', { employee_id: parseInt(empId), start_date: start, end_date: end, reason: reason || null, status: 'approved' });
+    msg.textContent = 'تمت إضافة الإجازة بنجاح ✅'; msg.className = 'msg msg-success'; msg.style.display = 'block';
+    document.getElementById('f-start').value = ''; document.getElementById('f-end').value = ''; document.getElementById('f-reason').value = ''; document.getElementById('f-employee').value = '';
+    await loadLeaves();
+    setTimeout(function() { msg.style.display = 'none'; }, 3000);
+  } catch(e) { msg.textContent = 'خطأ: ' + e.message; msg.className = 'msg msg-error'; msg.style.display = 'block'; }
+}
+async function addEmployee() {
+  const name = document.getElementById('f-new-emp').value.trim();
+  const msg = document.getElementById('msg-add');
+  if (!name) return;
+  try {
+    await api('employees', 'POST', { name: name, department: 'الفريق' });
+    msg.textContent = 'تمت إضافة الموظف ' + name + ' بنجاح ✅'; msg.className = 'msg msg-success'; msg.style.display = 'block';
+    document.getElementById('f-new-emp').value = '';
+    await loadEmployees();
+    setTimeout(function() { msg.style.display = 'none'; }, 3000);
+  } catch(e) { msg.textContent = 'خطأ: ' + e.message; msg.className = 'msg msg-error'; msg.style.display = 'block'; }
+}
+async function deleteLeave(id) {
+  if (!confirm('هل أنت متأكد من حذف هذه الإجازة؟')) return;
+  try {
+    await api('leaves?id=eq.' + id, 'DELETE');
+    await loadLeaves();
+    const msg = document.getElementById('msg-del'); msg.textContent = 'تم حذف الإجازة ✅'; msg.className = 'msg msg-success'; msg.style.display = 'block';
+    setTimeout(function() { msg.style.display = 'none'; }, 3000);
+  } catch(e) { alert('خطأ في الحذف: ' + e.message); }
+}
+loadEmployees(); loadLeaves();
+</script>
+</body>
+</html>
