@@ -87,6 +87,10 @@ tr:hover td { background: #f7fafc; }
 <button class="btn btn-primary" onclick="addEmployee()">إضافة موظف</button>
 </div>
 </div>
+<div class="card" style="border:2px solid #f6ad55;background:#fffbf0;">
+<h2 style="color:#c05621;">&#x23F3; الطلبات المعلقة <span id="pending-count" style="background:#f6ad55;color:white;padding:2px 10px;border-radius:20px;font-size:13px;margin-right:8px;">0</span></h2>
+<div id="pending-table" class="loading">جاري التحميل...</div>
+</div>
 <div class="card">
 <h2>جميع الإجازات</h2>
 <div id="msg-del" class="msg"></div>
@@ -305,6 +309,34 @@ if (e.target === this) closeEditModal();
 await loadEmployees();
 await loadLeaves();
 })();
+
+async function loadPending() {
+  const pending = await api('leaves?select=*,employees(name)&status=eq.pending&order=created_at.desc', 'GET');
+  const count = pending ? pending.length : 0;
+  document.getElementById('pending-count').textContent = count;
+  const div = document.getElementById('pending-table');
+  if (!count) { div.innerHTML = '<div class="empty">&#x2705; لا توجد طلبات معلقة</div>'; return; }
+  let h = '<table><thead><tr><th>الموظف</th><th>من</th><th>إلى</th><th>الأيام</th><th>السبب</th><th>الإجراء</th></tr></thead><tbody>';
+  pending.forEach(function(l) {
+    const emp = l.employees ? l.employees.name : '-';
+    const days = diffDays(l.start_date, l.end_date);
+    h += '<tr><td><strong>' + emp + '</strong></td><td>' + formatDate(l.start_date) + '</td><td>' + formatDate(l.end_date) + '</td><td>' + days + ' يوم</td><td>' + (l.reason||'-') + '</td><td style="display:flex;gap:6px;">' +
+      '<button class="btn btn-primary" style="font-size:12px;padding:6px 12px;" onclick="approveLeave(' + l.id + ')">&#x2705; موافقة</button>' +
+      '<button class="btn btn-danger" style="font-size:12px;padding:6px 12px;" onclick="rejectLeave(' + l.id + ')">&#x274C; رفض</button></td></tr>';
+  });
+  h += '</tbody></table>';
+  div.innerHTML = h;
+}
+async function approveLeave(id) {
+  if (!confirm('موافقة على هذا الطلب؟')) return;
+  await api('leaves?id=eq.' + id, 'PATCH', { status: 'approved' });
+  loadAll(); loadPending();
+}
+async function rejectLeave(id) {
+  const notes = prompt('سبب الرفض (اختياري):') || '';
+  await api('leaves?id=eq.' + id, 'PATCH', { status: 'rejected', notes: notes });
+  loadAll(); loadPending();
+}
 </script>
 </body>
 </html>
