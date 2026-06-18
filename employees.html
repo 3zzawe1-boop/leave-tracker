@@ -83,7 +83,7 @@ function statusBadge(st) {
 function calcDays(s, e) { return Math.round((new Date(e) - new Date(s)) / 86400000) + 1; }
 function fmt(d) { return new Date(d).toLocaleDateString('ar-SA', {year:'numeric', month:'short', day:'numeric'}); }
 async function loadAll() {
-  const [leaves, employees] = await Promise.all([api('leaves?select=*,employees(name)&order=start_date.desc'), api('employees?select=*&order=name')]);
+    const [leaves, employees] = await Promise.all([api('leaves?select=*,employees(name)&status=eq.approved&order=start_date.desc'), api('employees?select=*&order=name')]);
   let active = 0, upcoming = 0;
   leaves.forEach(l => { const s = getStatus(l.start_date, l.end_date); if (s==='active') active++; if (s==='upcoming') upcoming++; });
   document.getElementById('stat-total').textContent = leaves.length;
