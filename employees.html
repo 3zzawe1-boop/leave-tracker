@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>عرض الإجازات - للموظفين</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f4f8; color: #2d3748; direction: rtl; }
+.header { background: linear-gradient(135deg, #38a169 0%, #2f855a 100%); color: white; padding: 24px 32px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.header h1 { font-size: 28px; font-weight: 700; }
+.header p { opacity: 0.85; margin-top: 4px; font-size: 14px; }
+.header-badge { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+.container { max-width: 1100px; margin: 32px auto; padding: 0 16px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
+.stat-card .num { font-size: 36px; font-weight: 700; color: #667eea; }
+.stat-card .label { color: #718096; margin-top: 4px; font-size: 14px; }
+.card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+.card h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+table { width: 100%; border-collapse: collapse; }
+th { background: #f7fafc; padding: 12px 16px; text-align: right; font-size: 13px; font-weight: 600; color: #4a5568; border-bottom: 2px solid #e2e8f0; }
+td { padding: 12px 16px; border-bottom: 1px solid #f0f4f8; font-size: 14px; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f7fafc; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-active { background: #c6f6d5; color: #276749; }
+.badge-upcoming { background: #bee3f8; color: #2c5282; }
+.badge-ended { background: #e2e8f0; color: #718096; }
+.today-section { background: linear-gradient(135deg, #e6fffa 0%, #ebf8ff 100%); border: 1px solid #81e6d9; }
+.loading { text-align: center; color: #718096; padding: 24px; }
+.empty { text-align: center; color: #a0aec0; padding: 24px; font-size: 14px; }
+.refresh-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 600; }
+.refresh-btn:hover { background: rgba(255,255,255,0.35); }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>نظام تتبع الإجازات</h1>
+    <p>صفحة العرض - للموظفين فقط</p>
+  </div>
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <span class="header-badge">عرض فقط</span>
+    <button class="refresh-btn" onclick="loadAll()">تحديث</button>
+  </div>
+</div>
+<div class="container">
+  <div class="stats">
+    <div class="stat-card"><div class="num" id="stat-total">-</div><div class="label">اجمالي الاجازات</div></div>
+    <div class="stat-card"><div class="num" id="stat-active" style="color:#38a169">-</div><div class="label">في اجازة الان</div></div>
+    <div class="stat-card"><div class="num" id="stat-upcoming" style="color:#3182ce">-</div><div class="label">اجازات قادمة</div></div>
+    <div class="stat-card"><div class="num" id="stat-employees" style="color:#805ad5">-</div><div class="label">عدد الموظفين</div></div>
+  </div>
+  <div class="card today-section">
+    <h2>الحالة اليوم</h2>
+    <div id="today-info" class="loading">جاري التحميل...</div>
+  </div>
+  <div class="card">
+    <h2>جميع الاجازات</h2>
+    <div id="leaves-table" class="loading">جاري التحميل...</div>
+  </div>
+</div>
+<script>
+const SUPABASE_URL = 'https://wtbypuieilnicomwnwax.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_T88-VXy8YDYL91hk9IgWGg_l0B6Ax4w';
+async function api(path) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, { headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY } });
+  return res.ok ? res.json() : [];
+}
+function getStatus(start, end) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const s = new Date(start), e = new Date(end);
+  if (today >= s && today <= e) return 'active';
+  if (today < s) return 'upcoming';
+  return 'ended';
+}
+function statusBadge(st) {
+  if (st === 'active') return '<span class="badge badge-active">في اجازة</span>';
+  if (st === 'upcoming') return '<span class="badge badge-upcoming">قادمة</span>';
+  return '<span class="badge badge-ended">انتهت</span>';
+}
+function calcDays(s, e) { return Math.round((new Date(e) - new Date(s)) / 86400000) + 1; }
+function fmt(d) { return new Date(d).toLocaleDateString('ar-SA', {year:'numeric', month:'short', day:'numeric'}); }
+async function loadAll() {
+  const [leaves, employees] = await Promise.all([api('leaves?select=*,employees(name)&order=start_date.desc'), api('employees?select=*&order=name')]);
+  let active = 0, upcoming = 0;
+  leaves.forEach(l => { const s = getStatus(l.start_date, l.end_date); if (s==='active') active++; if (s==='upcoming') upcoming++; });
+  document.getElementById('stat-total').textContent = leaves.length;
+  document.getElementById('stat-active').textContent = active;
+  document.getElementById('stat-upcoming').textContent = upcoming;
+  document.getElementById('stat-employees').textContent = employees.length;
+  renderToday(leaves);
+  renderTable(leaves);
+}
+function renderToday(leaves) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const active = leaves.filter(l => getStatus(l.start_date, l.end_date) === 'active');
+  const up7 = leaves.filter(l => { const d = Math.round((new Date(l.start_date)-today)/86400000); return d>0 && d<=7; });
+  let html = '';
+  if (!active.length && !up7.length) { html = '<div class="empty">لا يوجد احد في اجازة اليوم ولا اجازات قادمة خلال 7 ايام</div>'; }
+  else {
+    if (active.length) {
+      html += '<p style="font-weight:600;color:#276749;margin-bottom:10px;">في اجازة الان:</p><ul style="list-style:none;margin-bottom:16px;">';
+      active.forEach(l => { const emp = l.employees ? l.employees.name : '-'; html += '<li style="padding:8px 12px;background:#f0fff4;border-radius:8px;margin-bottom:6px;border-right:3px solid #38a169;"><strong>' + emp + '</strong> - ' + (l.reason||'اجازة') + ' (' + calcDays(l.start_date,l.end_date) + ' يوم) | ينتهي: ' + fmt(l.end_date) + '</li>'; });
+      html += '</ul>';
+    }
+    if (up7.length) {
+      html += '<p style="font-weight:600;color:#2c5282;margin-bottom:10px;">اجازات قادمة خلال 7 ايام:</p><ul style="list-style:none;">';
+      up7.forEach(l => { const emp = l.employees ? l.employees.name : '-'; const d = Math.round((new Date(l.start_date)-today)/86400000); html += '<li style="padding:8px 12px;background:#ebf8ff;border-radius:8px;margin-bottom:6px;border-right:3px solid #3182ce;"><strong>' + emp + '</strong> - ' + (l.reason||'اجازة') + ' | يبدا بعد ' + d + ' يوم (' + fmt(l.start_date) + ')</li>'; });
+      html += '</ul>';
+    }
+  }
+  document.getElementById('today-info').innerHTML = html;
+}
+function renderTable(leaves) {
+  if (!leaves.length) { document.getElementById('leaves-table').innerHTML = '<div class="empty">لا توجد اجازات مسجلة</div>'; return; }
+  let html = '<table><thead><tr><th>#</th><th>الموظف</th><th>تاريخ البداية</th><th>تاريخ النهاية</th><th>عدد الايام</th><th>السبب</th><th>الحالة</th></tr></thead><tbody>';
+  leaves.forEach((l, i) => { const emp = l.employees ? l.employees.name : '-'; html += '<tr><td>' + (i+1) + '</td><td><strong>' + emp + '</strong></td><td>' + fmt(l.start_date) + '</td><td>' + fmt(l.end_date) + '</td><td>' + calcDays(l.start_date,l.end_date) + ' يوم</td><td>' + (l.reason||'-') + '</td><td>' + statusBadge(getStatus(l.start_date,l.end_date)) + '</td></tr>'; });
+  html += '</tbody></table>';
+  document.getElementById('leaves-table').innerHTML = html;
+}
+loadAll();
+setInterval(loadAll, 60000);
+</script>
+</body>
+</html>
