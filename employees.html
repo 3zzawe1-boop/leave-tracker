@@ -1,405 +1,194 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام تتبع الإجازات - الموظفين</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f4f8; color: #2d3748; direction: rtl; }
-
-    /* ===== NAVBAR ===== */
-    .navbar { background: #1a202c; color: white; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 52px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
-    .navbar-brand { font-size: 16px; font-weight: 700; color: white; text-decoration: none; }
-    .navbar-links { display: flex; gap: 4px; }
-    .navbar-links a { color: rgba(255,255,255,0.75); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 14px; font-weight: 500; transition: all 0.2s; }
-    .navbar-links a:hover { background: rgba(255,255,255,0.1); color: white; }
-    .navbar-links a.active { background: #38a169; color: white; }
-
-    /* ===== HEADER ===== */
-    .header { background: linear-gradient(135deg, #38a169 0%, #2f855a 100%); color: white; padding: 24px 32px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-    .header h1 { font-size: 26px; font-weight: 700; }
-    .header p { opacity: 0.85; margin-top: 4px; font-size: 13px; }
-    .header-badge { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
-    .refresh-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 600; }
-    .refresh-btn:hover { background: rgba(255,255,255,0.35); }
-
-    /* ===== CONTAINER ===== */
-    .container { max-width: 1100px; margin: 28px auto; padding: 0 16px; }
-
-    /* ===== STATS ===== */
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
-    .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
-    .stat-card .num { font-size: 36px; font-weight: 700; color: #667eea; }
-    .stat-card .label { color: #718096; margin-top: 4px; font-size: 14px; }
-
-    /* ===== CARDS ===== */
-    .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
-    .card h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
-    .today-section { background: linear-gradient(135deg, #e6fffa 0%, #ebf8ff 100%); border: 1px solid #81e6d9; }
-
-    /* ===== TABLE ===== */
-    table { width: 100%; border-collapse: collapse; }
-    th { background: #f7fafc; padding: 12px 16px; text-align: right; font-size: 13px; font-weight: 600; color: #4a5568; border-bottom: 2px solid #e2e8f0; }
-    td { padding: 12px 16px; border-bottom: 1px solid #f0f4f8; font-size: 14px; vertical-align: middle; }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #f7fafc; }
-    .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-    .badge-active { background: #c6f6d5; color: #276749; }
-    .badge-upcoming { background: #bee3f8; color: #2c5282; }
-    .badge-ended { background: #e2e8f0; color: #718096; }
-    .loading { text-align: center; color: #718096; padding: 24px; }
-    .empty { text-align: center; color: #a0aec0; padding: 24px; font-size: 14px; }
-
-    /* ===== REQUEST FORM ===== */
-    .request-card { border: 2px solid #c6f6d5; }
-    .request-card h2 { color: #276749; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-group.full { grid-column: 1 / -1; }
-    .form-group label { font-size: 13px; font-weight: 600; color: #4a5568; }
-    .form-group select, .form-group input, .form-group textarea {
-        border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 14px;
-        font-family: inherit; background: #f7fafc; color: #2d3748; transition: border-color 0.2s;
-        direction: rtl;
-    }
-    .form-group select:focus, .form-group input:focus, .form-group textarea:focus {
-        outline: none; border-color: #38a169; background: white;
-    }
-    .form-group textarea { resize: vertical; min-height: 80px; }
-    .conflict-warning { background: #fff5f5; border: 1.5px solid #fc8181; color: #c53030; border-radius: 8px; padding: 12px 16px; font-size: 14px; margin-bottom: 16px; display: none; }
-    .conflict-warning.show { display: block; }
-    .success-msg { background: #f0fff4; border: 1.5px solid #68d391; color: #276749; border-radius: 8px; padding: 14px 16px; font-size: 14px; margin-bottom: 16px; display: none; text-align: center; font-weight: 600; }
-    .success-msg.show { display: block; }
-    .submit-btn { background: #38a169; color: white; border: none; border-radius: 8px; padding: 12px 28px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; transition: background 0.2s; width: 100%; }
-    .submit-btn:hover:not(:disabled) { background: #2f855a; }
-    .submit-btn:disabled { background: #a0aec0; cursor: not-allowed; }
-    .days-preview { font-size: 12px; color: #718096; margin-top: 4px; }
-    </style>
-  </head>
-  <body>
-
-    <!-- NAVBAR -->
-    <nav class="navbar">
-        <a href="index.html" class="navbar-brand">&#x1F4CB; نظام الإجازات</a>a>
-        <div class="navbar-links">
-              <a href="employees.html" class="active">&#x1F465; صفحة الموظفين</a>a>
-              <a href="index.html">&#x1F6E1;&#xFE0F; لوحة الإدارة</a>a>
-        </div>div>
-    </nav>nav>
-
-    <!-- HEADER -->
-    <div class="header">
-        <div>
-              <h1>&#x1F4C5; نظام تتبع الإجازات</h1>
-            <p>عرض الإجازات وتقديم الطلبات</p>
-        </div>
-      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-          <span class="header-badge">الموظفين</span>span>
-          <button class="refresh-btn" onclick="loadAll()">تحديث</button>button>
-      </div>
-    </div>
-  
-  <div class="container">
-  
-    <!-- STATS -->
-    <div class="stats">
-        <div class="stat-card"><div class="num" id="stat-total">-</div><div class="label">اجمالي الاجازات</div></div>
-        <div class="stat-card"><div class="num" id="stat-active" style="color:#38a169">-</div><div class="label">في اجازة الان</div></div>
-        <div class="stat-card"><div class="num" id="stat-upcoming" style="color:#3182ce">-</div><div class="label">اجازات قادمة</div></div>
-        <div class="stat-card"><div class="num" id="stat-employees" style="color:#805ad5">-</div><div class="label">عدد الموظفين</div></div>
-    </div>
-  
-    <!-- TODAY -->
-    <div class="card today-section">
-        <h2>الحالة اليوم</h2>
-        <div id="today-info" class="loading">جاري التحميل...</div>
-    </div>
-  
-    <!-- ALL LEAVES TABLE -->
-    <div class="card">
-        <h2>جميع الاجازات الموافق عليها</h2>
-        <div id="leaves-table" class="loading">جاري التحميل...</div>
-    </div>
-  
-    <!-- REQUEST FORM -->
-    <div class="card request-card">
-        <h2>&#x1F4DD; تقديم طلب إجازة</h2>
-    
-        <div class="success-msg" id="success-msg">
-              &#x2705; تم إرسال طلبك بنجاح! سيتم مراجعته من قبل الإدارة.
-        </div>
-    
-        <div class="conflict-warning" id="conflict-warning"></div>
-    
-        <form id="request-form" onsubmit="submitRequest(event)">
-              <div class="form-grid">
-                      <div class="form-group">
-                                <label>الاسم</label>
-                                <select id="req-name" required>
-                                            <option value="">-- اختر اسمك --</option>option>
-                                </select>select>
-                      </div>
-                      <div class="form-group">
-                                <label>السبب</label>
-                                <input type="text" id="req-reason" placeholder="سبب الإجازة" required />
-                      </div>
-                      <div class="form-group">
-                                <label>تاريخ البداية</label>
-                                <input type="date" id="req-start" required onchange="onStartChange()" />
-                      </div>
-                      <div class="form-group">
-                                <label>تاريخ النهاية</label>
-                                <input type="date" id="req-end" required onchange="onEndChange()" />
-                                <span class="days-preview" id="days-preview"></span>span>
-                      </div>
-                      <div class="form-group full">
-                                <label>ملاحظات إضافية (اختياري)</label>
-                                <textarea id="req-notes" placeholder="أي تفاصيل إضافية..."></textarea>
-                      </div>
-              </div>
-              <button type="submit" class="submit-btn" id="submit-btn">إرسال الطلب</button>button>
-        </form>form>
-    </div>
-  
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام تتبع الاجازات - الموظفين</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: Segoe UI, Tahoma, sans-serif; background: #f0f4f8; color: #2d3748; direction: rtl; }
+.navbar { background: #1a202c; color: white; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 52px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
+.navbar-brand { font-size: 16px; font-weight: 700; color: white; text-decoration: none; }
+.navbar-links { display: flex; gap: 4px; }
+.navbar-links a { color: rgba(255,255,255,0.75); text-decoration: none; padding: 6px 14px; border-radius: 6px; font-size: 14px; font-weight: 500; }
+.navbar-links a.active { background: #38a169; color: white; }
+.header { background: linear-gradient(135deg, #38a169 0%, #2f855a 100%); color: white; padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.header h1 { font-size: 26px; font-weight: 700; }
+.header p { opacity: 0.85; margin-top: 4px; font-size: 13px; }
+.header-badge { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+.refresh-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 600; }
+.container { max-width: 1100px; margin: 28px auto; padding: 0 16px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; }
+.stat-card .num { font-size: 36px; font-weight: 700; color: #667eea; }
+.stat-card .label { color: #718096; margin-top: 4px; font-size: 14px; }
+.card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+.card h2 { font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #2d3748; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
+.today-section { background: linear-gradient(135deg, #e6fffa 0%, #ebf8ff 100%); border: 1px solid #81e6d9; }
+table { width: 100%; border-collapse: collapse; }
+th { background: #f7fafc; padding: 12px 16px; text-align: right; font-size: 13px; font-weight: 600; color: #4a5568; border-bottom: 2px solid #e2e8f0; }
+td { padding: 12px 16px; border-bottom: 1px solid #f0f4f8; font-size: 14px; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f7fafc; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-active { background: #c6f6d5; color: #276749; }
+.badge-upcoming { background: #bee3f8; color: #2c5282; }
+.badge-ended { background: #e2e8f0; color: #718096; }
+.loading { text-align: center; color: #718096; padding: 24px; }
+.empty { text-align: center; color: #a0aec0; padding: 24px; font-size: 14px; }
+.request-card { border: 2px solid #c6f6d5; }
+.request-card h2 { color: #276749; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-group label { font-size: 13px; font-weight: 600; color: #4a5568; }
+.form-group select, .form-group input, .form-group textarea { border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: inherit; background: #f7fafc; color: #2d3748; direction: rtl; }
+.form-group select:focus, .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #38a169; background: white; }
+.form-group textarea { resize: vertical; min-height: 80px; }
+.conflict-warning { background: #fff5f5; border: 1.5px solid #fc8181; color: #c53030; border-radius: 8px; padding: 12px 16px; font-size: 14px; margin-bottom: 16px; display: none; }
+.conflict-warning.show { display: block; }
+.success-msg { background: #f0fff4; border: 1.5px solid #68d391; color: #276749; border-radius: 8px; padding: 14px 16px; font-size: 14px; margin-bottom: 16px; display: none; text-align: center; font-weight: 600; }
+.success-msg.show { display: block; }
+.submit-btn { background: #38a169; color: white; border: none; border-radius: 8px; padding: 12px 28px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; width: 100%; }
+.submit-btn:hover:not(:disabled) { background: #2f855a; }
+.submit-btn:disabled { background: #a0aec0; cursor: not-allowed; }
+.days-preview { font-size: 12px; color: #718096; margin-top: 4px; }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <a href="index.html" class="navbar-brand">نظام الاجازات</a>
+  <div class="navbar-links">
+    <a href="employees.html" class="active">صفحة الموظفين</a>
+    <a href="index.html">لوحة الادارة</a>
   </div>
-  
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-  <script>
-    const SUPABASE_URL = 'https://wtbypuieilnicomwnwax.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_T88-VXy8YDYL91hk9IgWGg_l0B6Ax4w';
-    const EMAILJS_SERVICE = 'service_9vkcpeo';
-    const EMAILJS_TEMPLATE = 'template_xykx1lg';
-    const EMAILJS_PUBLIC_KEY = 'sltwrjL9WXGInu62s';
-    const ADMIN_EMAIL = '3zzawe1@gmail.com';
-    const BASE_URL = 'https://3zzawe1-boop.github.io/leave-tracker';
-
-    emailjs.init(EMAILJS_PUBLIC_KEY);
-
-    let allApprovedLeaves = [];
-    let allEmployees = [];
-
-    async function api(path, method = 'GET', body = null) {
-        const opts = {
-              method,
-              headers: {
-                      'apikey': SUPABASE_KEY,
-                      'Authorization': 'Bearer ' + SUPABASE_KEY,
-                      'Content-Type': 'application/json',
-                      'Prefer': method === 'POST' ? 'return=representation' : ''
-              }
-        };
-        if (body) opts.body = JSON.stringify(body);
-        const res = await fetch(SUPABASE_URL + '/rest/v1/' + path, opts);
-        return res.ok ? res.json() : [];
-    }
-
-    function getStatus(start, end) {
-        const today = new Date(); today.setHours(0,0,0,0);
-        const s = new Date(start), e = new Date(end);
-        if (today >= s && today <= e) return 'active';
-        if (today < s) return 'upcoming';
-        return 'ended';
-    }
-    function statusBadge(st) {
-        if (st === 'active') return '<span class="badge badge-active">في اجازة</span>';
-        if (st === 'upcoming') return '<span class="badge badge-upcoming">قادمة</span>';
-        return '<span class="badge badge-ended">انتهت</span>';
-    }
-    function calcDays(s, e) { return Math.round((new Date(e) - new Date(s)) / 86400000) + 1; }
-    function fmt(d) { return new Date(d).toLocaleDateString('ar-SA', {year:'numeric', month:'short', day:'numeric'}); }
-
-    async function loadAll() {
-        const [leaves, employees] = await Promise.all([
-              api('leaves?select=*,employees(name)&status=eq.approved&order=start_date.desc'),
-              api('employees?select=*&order=name')
-            ]);
-        allApprovedLeaves = leaves;
-        allEmployees = employees;
-
-        let active = 0, upcoming = 0;
-        leaves.forEach(l => { const s = getStatus(l.start_date, l.end_date); if(s==='active') active++; if(s==='upcoming') upcoming++; });
-        document.getElementById('stat-total').textContent = leaves.length;
-        document.getElementById('stat-active').textContent = active;
-        document.getElementById('stat-upcoming').textContent = upcoming;
-        document.getElementById('stat-employees').textContent = employees.length;
-
-        renderToday(leaves);
-        renderTable(leaves);
-        loadEmployeeSelect(employees);
-    }
-
-    function loadEmployeeSelect(employees) {
-        const sel = document.getElementById('req-name');
-        sel.innerHTML = '<option value="">-- اختر اسمك --</option>';
-        employees.forEach(e => {
-              const opt = document.createElement('option');
-              opt.value = e.id;
-              opt.textContent = e.name;
-              sel.appendChild(opt);
-        });
-    }
-
-    function renderToday(leaves) {
-        const today = new Date(); today.setHours(0,0,0,0);
-        const active = leaves.filter(l => getStatus(l.start_date, l.end_date) === 'active');
-        const up7 = leaves.filter(l => { const d = Math.round((new Date(l.start_date)-today)/86400000); return d>0 && d<=7; });
-        let html = '';
-        if (!active.length && !up7.length) {
-              html = '<div class="empty">لا يوجد احد في اجازة اليوم ولا اجازات قادمة خلال 7 ايام</div>';
-        } else {
-              if (active.length) {
-                      html += '<p style="font-weight:600;color:#276749;margin-bottom:10px;">في اجازة الان:</p><ul style="list-style:none;margin-bottom:16px;">';
-                      active.forEach(l => {
-                                const emp = l.employees ? l.employees.name : '-';
-                                html += '<li style="padding:8px 12px;background:#f0fff4;border-radius:8px;margin-bottom:6px;border-right:3px solid #38a169;"><strong>' + emp + '</strong> - ' + (l.reason||'اجازة') + ' (' + calcDays(l.start_date,l.end_date) + ' يوم) | ينتهي: ' + fmt(l.end_date) + '</li>';
-                      });
-                      html += '</ul>';
-              }
-              if (up7.length) {
-                      html += '<p style="font-weight:600;color:#2c5282;margin-bottom:10px;">اجازات قادمة خلال 7 ايام:</p><ul style="list-style:none;">';
-                      up7.forEach(l => {
-                                const emp = l.employees ? l.employees.name : '-';
-                                const d = Math.round((new Date(l.start_date)-today)/86400000);
-                                html += '<li style="padding:8px 12px;background:#ebf8ff;border-radius:8px;margin-bottom:6px;border-right:3px solid #3182ce;"><strong>' + emp + '</strong> - ' + (l.reason||'اجازة') + ' | يبدا بعد ' + d + ' يوم (' + fmt(l.start_date) + ')</li>';
-                      });
-                      html += '</ul>';
-              }
-        }
-        document.getElementById('today-info').innerHTML = html;
-    }
-
-    function renderTable(leaves) {
-        if (!leaves.length) { document.getElementById('leaves-table').innerHTML = '<div class="empty">لا توجد اجازات مسجلة</div>'; return; }
-        let html = '<table><thead><tr><th>#</th><th>الموظف</th><th>تاريخ البداية</th><th>تاريخ النهاية</th><th>عدد الايام</th><th>السبب</th><th>الحالة</th></tr></thead><tbody>';
-        leaves.forEach((l, i) => {
-              const emp = l.employees ? l.employees.name : '-';
-              html += '<tr><td>' + (i+1) + '</td><td><strong>' + emp + '</strong></td><td>' + fmt(l.start_date) + '</td><td>' + fmt(l.end_date) + '</td><td>' + calcDays(l.start_date,l.end_date) + ' يوم</td><td>' + (l.reason||'-') + '</td><td>' + statusBadge(getStatus(l.start_date,l.end_date)) + '</td></tr>';
-        });
-        html += '</tbody></table>';
-        document.getElementById('leaves-table').innerHTML = html;
-    }
-
-    // ===== DATE LOGIC =====
-    function onStartChange() {
-        const startVal = document.getElementById('req-start').value;
-        const endInput = document.getElementById('req-end');
-        if (startVal) {
-              // Set min for end date to day after start
-              const nextDay = new Date(startVal);
-              nextDay.setDate(nextDay.getDate() + 1);
-              const minEnd = nextDay.toISOString().split('T')[0];
-              endInput.min = minEnd;
-              // If current end value is before new min, reset it
-              if (endInput.value && endInput.value <= startVal) {
-                      endInput.value = minEnd;
-              }
-        }
-        updateDaysPreview();
-        checkConflict();
-    }
-
-    function onEndChange() {
-        updateDaysPreview();
-        checkConflict();
-    }
-
-    function updateDaysPreview() {
-        const s = document.getElementById('req-start').value;
-        const e = document.getElementById('req-end').value;
-        const preview = document.getElementById('days-preview');
-        if (s && e && e > s) {
-              const days = calcDays(s, e);
-              preview.textContent = days + ' يوم';
-        } else {
-              preview.textContent = '';
-        }
-    }
-
-    function checkConflict() {
-        const s = document.getElementById('req-start').value;
-        const e = document.getElementById('req-end').value;
-        const warning = document.getElementById('conflict-warning');
-        const btn = document.getElementById('submit-btn');
-        if (!s || !e) { warning.classList.remove('show'); btn.disabled = false; return; }
-
-        const conflicts = allApprovedLeaves.filter(l => {
-              return !(e < l.start_date || s > l.end_date);
-        });
-
-        if (conflicts.length > 0) {
-              const names = conflicts.map(l => l.employees ? l.employees.name : '-').join('، ');
-              warning.innerHTML = '&#x26A0;&#xFE0F; يوجد تعارض مع إجازة <strong>' + names + '</strong> في نفس الفترة. لا يمكن التقديم.';
-              warning.classList.add('show');
-              btn.disabled = true;
-        } else {
-              warning.classList.remove('show');
-              btn.disabled = false;
-        }
-    }
-
-    // ===== SUBMIT =====
-    async function submitRequest(event) {
-        event.preventDefault();
-        const btn = document.getElementById('submit-btn');
-        btn.disabled = true;
-        btn.textContent = 'جاري الإرسال...';
-
-        const empId = document.getElementById('req-name').value;
-        const empName = document.getElementById('req-name').selectedOptions[0].textContent;
-        const startDate = document.getElementById('req-start').value;
-        const endDate = document.getElementById('req-end').value;
-        const reason = document.getElementById('req-reason').value;
-        const notes = document.getElementById('req-notes').value;
-
-        try {
-              // Save as pending in Supabase
-              const result = await api('leaves', 'POST', {
-                      employee_id: empId,
-                      start_date: startDate,
-                      end_date: endDate,
-                      reason: reason,
-                      notes: notes,
-                      status: 'pending'
-              });
-
-              const leaveId = Array.isArray(result) && result[0] ? result[0].id : '?';
-              const approveUrl = BASE_URL + '/action.html?action=approve&id=' + leaveId;
-              const rejectUrl = BASE_URL + '/action.html?action=reject&id=' + leaveId;
-
-              // Send email
-              await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
-                      to_email: ADMIN_EMAIL,
-                      employee_name: empName,
-                      start_date: startDate,
-                      end_date: endDate,
-                      reason: reason,
-                      notes: notes || 'لا يوجد',
-                      days_count: calcDays(startDate, endDate),
-                      approve_url: approveUrl,
-                      reject_url: rejectUrl
-              });
-
-              // Success
-              document.getElementById('success-msg').classList.add('show');
-              document.getElementById('request-form').reset();
-              document.getElementById('days-preview').textContent = '';
-              document.getElementById('conflict-warning').classList.remove('show');
-              document.getElementById('req-end').min = '';
-        } catch (err) {
-              alert('حدث خطأ: ' + err.message);
-        } finally {
-              btn.disabled = false;
-              btn.textContent = 'إرسال الطلب';
-        }
-    }
-
-    loadAll();
-  </script>
-  </body>
-</html>html>
-  </script></label></label></p></h1>
-        </div>
-  </body>
-  </style></title>
-  </head>
+</nav>
+<div class="header">
+  <div><h1>نظام تتبع الاجازات</h1><p>عرض الاجازات وتقديم الطلبات</p></div>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <span class="header-badge">الموظفين</span>
+    <button class="refresh-btn" onclick="loadAll()">تحديث</button>
+  </div>
+</div>
+<div class="container">
+  <div class="stats">
+    <div class="stat-card"><div class="num" id="stat-total">-</div><div class="label">اجمالي الاجازات</div></div>
+    <div class="stat-card"><div class="num" id="stat-active" style="color:#38a169">-</div><div class="label">في اجازة الان</div></div>
+    <div class="stat-card"><div class="num" id="stat-upcoming" style="color:#3182ce">-</div><div class="label">اجازات قادمة</div></div>
+    <div class="stat-card"><div class="num" id="stat-employees" style="color:#805ad5">-</div><div class="label">عدد الموظفين</div></div>
+  </div>
+  <div class="card today-section">
+    <h2>الحالة اليوم</h2>
+    <div id="today-info" class="loading">جاري التحميل...</div>
+  </div>
+  <div class="card">
+    <h2>جميع الاجازات الموافق عليها</h2>
+    <div id="leaves-table" class="loading">جاري التحميل...</div>
+  </div>
+  <div class="card request-card">
+    <h2>تقديم طلب اجازة</h2>
+    <div class="success-msg" id="success-msg">تم ارسال طلبك بنجاح! سيتم مراجعته من قبل الادارة.</div>
+    <div class="conflict-warning" id="conflict-warning"></div>
+    <form id="request-form" onsubmit="submitRequest(event)">
+      <div class="form-grid">
+        <div class="form-group"><label>الاسم</label><select id="req-name" required><option value="">-- اختر اسمك --</option></select></div>
+        <div class="form-group"><label>السبب</label><input type="text" id="req-reason" placeholder="سبب الاجازة" required /></div>
+        <div class="form-group"><label>تاريخ البداية</label><input type="date" id="req-start" required onchange="onStartChange()" /></div>
+        <div class="form-group"><label>تاريخ النهاية</label><input type="date" id="req-end" required onchange="onEndChange()" /><span class="days-preview" id="days-preview"></span></div>
+        <div class="form-group full"><label>ملاحظات اضافية (اختياري)</label><textarea id="req-notes" placeholder="اي تفاصيل اضافية..."></textarea></div>
+      </div>
+      <button type="submit" class="submit-btn" id="submit-btn">ارسال الطلب</button>
+    </form>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+const SUPABASE_URL="https://wtbypuieilnicomwnwax.supabase.co";
+const SUPABASE_KEY="sb_publishable_T88-VXy8YDYL91hk9IgWGg_l0B6Ax4w";
+const EMAILJS_SERVICE="service_9vkcpeo";
+const EMAILJS_TEMPLATE="template_xykx1lg";
+const EMAILJS_PUBLIC_KEY="sltwrjL9WXGInu62s";
+const ADMIN_EMAIL="3zzawe1@gmail.com";
+const BASE_URL="https://3zzawe1-boop.github.io/leave-tracker";
+emailjs.init(EMAILJS_PUBLIC_KEY);
+let allApprovedLeaves=[],allEmployees=[];
+async function api(path,method="GET",body=null){const opts={method,headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+SUPABASE_KEY,"Content-Type":"application/json","Prefer":method==="POST"?"return=representation":""}};if(body)opts.body=JSON.stringify(body);const res=await fetch(SUPABASE_URL+"/rest/v1/"+path,opts);return res.ok?res.json():[];}
+function getStatus(s,e){const t=new Date();t.setHours(0,0,0,0);const sd=new Date(s),ed=new Date(e);if(t>=sd&&t<=ed)return"active";if(t<sd)return"upcoming";return"ended";}
+function statusBadge(st){if(st==="active")return'<span class="badge badge-active">في اجازة</span>';if(st==="upcoming")return'<span class="badge badge-upcoming">قادمة</span>';return'<span class="badge badge-ended">انتهت</span>';}
+function calcDays(s,e){return Math.round((new Date(e)-new Date(s))/86400000)+1;}
+function fmt(d){return new Date(d).toLocaleDateString("ar-SA",{year:"numeric",month:"short",day:"numeric"});}
+async function loadAll(){
+  const[leaves,employees]=await Promise.all([api("leaves?select=*,employees(name)&status=eq.approved&order=start_date.desc"),api("employees?select=*&order=name")]);
+  allApprovedLeaves=leaves;allEmployees=employees;
+  let active=0,upcoming=0;
+  leaves.forEach(l=>{const s=getStatus(l.start_date,l.end_date);if(s==="active")active++;if(s==="upcoming")upcoming++;});
+  document.getElementById("stat-total").textContent=leaves.length;
+  document.getElementById("stat-active").textContent=active;
+  document.getElementById("stat-upcoming").textContent=upcoming;
+  document.getElementById("stat-employees").textContent=employees.length;
+  renderToday(leaves);renderTable(leaves);loadEmployeeSelect(employees);
+}
+function loadEmployeeSelect(emps){const sel=document.getElementById("req-name");sel.innerHTML='<option value="">-- اختر اسمك --</option>';emps.forEach(e=>{const opt=document.createElement("option");opt.value=e.id;opt.textContent=e.name;sel.appendChild(opt);});}
+function renderToday(leaves){
+  const today=new Date();today.setHours(0,0,0,0);
+  const active=leaves.filter(l=>getStatus(l.start_date,l.end_date)==="active");
+  const up7=leaves.filter(l=>{const d=Math.round((new Date(l.start_date)-today)/86400000);return d>0&&d<=7;});
+  let html="";
+  if(!active.length&&!up7.length){html='<div class="empty">لا يوجد احد في اجازة اليوم</div>';}
+  else{
+    if(active.length){html+='<p style="font-weight:600;color:#276749;margin-bottom:10px;">في اجازة الان:</p><ul style="list-style:none;margin-bottom:16px;">';active.forEach(l=>{const emp=l.employees?l.employees.name:"-";html+='<li style="padding:8px 12px;background:#f0fff4;border-radius:8px;margin-bottom:6px;border-right:3px solid #38a169;"><strong>'+emp+"</strong> - "+(l.reason||"اجازة")+" ("+calcDays(l.start_date,l.end_date)+" يوم) | ينتهي: "+fmt(l.end_date)+"</li>";});html+="</ul>";}
+    if(up7.length){html+='<p style="font-weight:600;color:#2c5282;margin-bottom:10px;">اجازات قادمة خلال 7 ايام:</p><ul style="list-style:none;">';up7.forEach(l=>{const emp=l.employees?l.employees.name:"-";const d=Math.round((new Date(l.start_date)-today)/86400000);html+='<li style="padding:8px 12px;background:#ebf8ff;border-radius:8px;margin-bottom:6px;border-right:3px solid #3182ce;"><strong>'+emp+"</strong> - "+(l.reason||"اجازة")+" | يبدا بعد "+d+" يوم ("+fmt(l.start_date)+")</li>";});html+="</ul>";}
+  }
+  document.getElementById("today-info").innerHTML=html;
+}
+function renderTable(leaves){
+  if(!leaves.length){document.getElementById("leaves-table").innerHTML='<div class="empty">لا توجد اجازات</div>';return;}
+  let html='<table><thead><tr><th>#</th><th>الموظف</th><th>تاريخ البداية</th><th>تاريخ النهاية</th><th>عدد الايام</th><th>السبب</th><th>الحالة</th></tr></thead><tbody>';
+  leaves.forEach((l,i)=>{const emp=l.employees?l.employees.name:"-";html+="<tr><td>"+(i+1)+"</td><td><strong>"+emp+"</strong></td><td>"+fmt(l.start_date)+"</td><td>"+fmt(l.end_date)+"</td><td>"+calcDays(l.start_date,l.end_date)+" يوم</td><td>"+(l.reason||"-")+"</td><td>"+statusBadge(getStatus(l.start_date,l.end_date))+"</td></tr>";});
+  html+="</tbody></table>";
+  document.getElementById("leaves-table").innerHTML=html;
+}
+function onStartChange(){
+  const startVal=document.getElementById("req-start").value;
+  const endInput=document.getElementById("req-end");
+  if(startVal){const nextDay=new Date(startVal);nextDay.setDate(nextDay.getDate()+1);const minEnd=nextDay.toISOString().split("T")[0];endInput.min=minEnd;if(endInput.value&&endInput.value<=startVal)endInput.value=minEnd;}
+  updateDaysPreview();checkConflict();
+}
+function onEndChange(){updateDaysPreview();checkConflict();}
+function updateDaysPreview(){const s=document.getElementById("req-start").value,e=document.getElementById("req-end").value;document.getElementById("days-preview").textContent=(s&&e&&e>s)?calcDays(s,e)+" يوم":"";}
+function checkConflict(){
+  const s=document.getElementById("req-start").value,e=document.getElementById("req-end").value;
+  const warning=document.getElementById("conflict-warning"),btn=document.getElementById("submit-btn");
+  if(!s||!e){warning.classList.remove("show");btn.disabled=false;return;}
+  const conflicts=allApprovedLeaves.filter(l=>!(e<l.start_date||s>l.end_date));
+  if(conflicts.length>0){const names=conflicts.map(l=>l.employees?l.employees.name:"-").join("، ");warning.innerHTML="تحذير: يوجد تعارض مع اجازة <strong>"+names+"</strong>. لا يمكن التقديم.";warning.classList.add("show");btn.disabled=true;}
+  else{warning.classList.remove("show");btn.disabled=false;}
+}
+async function submitRequest(event){
+  event.preventDefault();
+  const btn=document.getElementById("submit-btn");
+  btn.disabled=true;btn.textContent="جاري الارسال...";
+  const empId=document.getElementById("req-name").value;
+  const empName=document.getElementById("req-name").selectedOptions[0].textContent;
+  const startDate=document.getElementById("req-start").value;
+  const endDate=document.getElementById("req-end").value;
+  const reason=document.getElementById("req-reason").value;
+  const notes=document.getElementById("req-notes").value;
+  try{
+    const result=await api("leaves","POST",{employee_id:empId,start_date:startDate,end_date:endDate,reason:reason,notes:notes,status:"pending"});
+    const leaveId=Array.isArray(result)&&result[0]?result[0].id:"?";
+    const approveUrl=BASE_URL+"/action.html?action=approve&id="+leaveId;
+    const rejectUrl=BASE_URL+"/action.html?action=reject&id="+leaveId;
+    await emailjs.send(EMAILJS_SERVICE,EMAILJS_TEMPLATE,{to_email:ADMIN_EMAIL,employee_name:empName,start_date:startDate,end_date:endDate,reason:reason,notes:notes||"لا يوجد",days_count:calcDays(startDate,endDate),approve_url:approveUrl,reject_url:rejectUrl});
+    document.getElementById("success-msg").classList.add("show");
+    document.getElementById("request-form").reset();
+    document.getElementById("days-preview").textContent="";
+    document.getElementById("conflict-warning").classList.remove("show");
+    document.getElementById("req-end").min="";
+  }catch(err){alert("حدث خطأ: "+err.message);}
+  finally{btn.disabled=false;btn.textContent="ارسال الطلب";}
+}
+loadAll();
+</script>
+</body>
+</html>
