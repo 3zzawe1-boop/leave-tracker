@@ -119,17 +119,27 @@ async function api(path,method,body){
   return res.ok?res.json():[];
 }
 function getStatus(s,e){var t=new Date();t.setHours(0,0,0,0);var sd=new Date(s),ed=new Date(e);if(t>=sd&&t<=ed)return"active";if(t<sd)return"upcoming";return"ended";}
+function statusPriority(st){if(st==="active")return 0;if(st==="upcoming")return 1;return 2;}
 function statusBadge(st){if(st==="active")return'<span class="badge badge-active">في إجازة</span>';if(st==="upcoming")return'<span class="badge badge-upcoming">قادمة</span>';return'<span class="badge badge-ended">انتهت</span>';}
 function calcDays(s,e){return Math.round((new Date(e)-new Date(s))/86400000)+1;}
 function fmt(d){return new Date(d).toLocaleDateString("ar-SA",{year:"numeric",month:"short",day:"numeric"});}
 function empName(l){return (l.employees&&l.employees.name)?l.employees.name:(l.employee_name||"-");}
+function sortLeaves(arr){
+  return arr.slice().sort(function(a,b){
+    var pa=statusPriority(getStatus(a.start_date,a.end_date));
+    var pb=statusPriority(getStatus(b.start_date,b.end_date));
+    if(pa!==pb)return pa-pb;
+    return new Date(a.start_date)-new Date(b.start_date);
+  });
+}
 async function loadAll(){
   var results=await Promise.all([
     api("leaves?status=eq.approved&select=*,employees(name)"),
     api("employees?select=*&order=name.asc")
   ]);
-  allApprovedLeaves=results[0].sort(function(a,b){return new Date(a.start_date)-new Date(b.start_date);});
+  allApprovedLeaves=results[0];
   allEmployees=results[1];
+  var sorted=sortLeaves(allApprovedLeaves);
   var sel=document.getElementById("req-name");
   sel.innerHTML='<option value="">-- اختر اسمك --</option>';
   allEmployees.forEach(function(e){sel.innerHTML+='<option value="'+e.id+'">'+e.name+'</option>';});
@@ -143,9 +153,9 @@ async function loadAll(){
   if(active.length===0){todayEl.innerHTML='<p class="empty">لا يوجد أحد في إجازة اليوم</p>';}
   else{todayEl.innerHTML=active.map(function(l){return '<p style="font-size:15px;padding:8px 0;"><strong>'+empName(l)+'</strong> — '+(l.reason||'')+' ('+fmt(l.start_date)+' إلى '+fmt(l.end_date)+')</p>';}).join('');}
   var tbl=document.getElementById("leaves-table");
-  if(allApprovedLeaves.length===0){tbl.innerHTML='<p class="empty">لا توجد إجازات مسجّلة</p>';return;}
+  if(sorted.length===0){tbl.innerHTML='<p class="empty">لا توجد إجازات مسجّلة</p>';return;}
   var rows='';
-  allApprovedLeaves.forEach(function(l,i){rows+='<tr><td>'+(i+1)+'</td><td>'+empName(l)+'</td><td>'+fmt(l.start_date)+'</td><td>'+fmt(l.end_date)+'</td><td>'+calcDays(l.start_date,l.end_date)+' يوم</td><td>'+(l.reason||'-')+'</td><td>'+statusBadge(getStatus(l.start_date,l.end_date))+'</td></tr>';});
+  sorted.forEach(function(l,i){rows+='<tr><td>'+(i+1)+'</td><td>'+empName(l)+'</td><td>'+fmt(l.start_date)+'</td><td>'+fmt(l.end_date)+'</td><td>'+calcDays(l.start_date,l.end_date)+' يوم</td><td>'+(l.reason||'-')+'</td><td>'+statusBadge(getStatus(l.start_date,l.end_date))+'</td></tr>';});
   tbl.innerHTML='<table><thead><tr><th>#</th><th>الموظف</th><th>تاريخ البداية</th><th>تاريخ النهاية</th><th>عدد الأيام</th><th>السبب</th><th>الحالة</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 function onStartChange(){
